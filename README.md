@@ -26,8 +26,36 @@ and
 ```
 respectively, on the Moodle server.
 
-# API
+# Connection to File Server API
 
 On the JupyterHub side, an API needs to be deployed on a server that has access to all user's files - typically the file server of the JupyterHub installation.
+In Kubernetes, the API is deployed in the same namespace as the JupyterHub.
 
 See this repository for the API: [epfl-cede/jupyterhub-fileserver-api](https://github.com/epfl-cede/jupyterhub-fileserver-api)
+
+# Configuration
+## Kubernetes
+Select the option _ETHZ Installation_ to switch to the settings suitable for Kubernetes.
+
+## API URL
+At ETHZ, we run one JupyterHub per Moodle course, isolated in different namespaces. The key for the
+different instances is the Moodle course ID. The configuration field allows to use a place holder 
+for the Moodle course ID:
+
+```
+https://your-api-url-base-[courseid].example.com
+```
+
+## API Username and Secret Key
+Authentication to the API is secured by a shared key/secret pair. Python 3.6+ example to 
+create a key or secret:
+```
+import secrets
+secrets.token_hex(32)
+```
+Use the same credentials to configure the `AUTH_USER` and `AUTH_KEY` variables for the API
+deployment.
+
+
+## API Username Parameters
+Set to _idnumber_ and leave the prefix empty.
