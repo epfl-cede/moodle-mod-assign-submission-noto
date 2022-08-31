@@ -540,26 +540,26 @@ class assign_submission_noto extends assign_submission_plugin {
     private static function get_grades_csv(stdClass $submission) {
         global $DB;
         $out = "";
-        $csvdata =[];
         $cm = get_coursemodule_from_instance('assign', $submission->assignment);
         $feedbackcomments = assign_submission_noto::get_noto_config($cm->instance, 'enabled', 'comments', 'assignfeedback');
-        // Headers
+
+        // CSV Headers
         $headerline = [
-            get_string('identifier', 'assignsubmission_noto'),
-            get_string('fullname', 'assignsubmission_noto'),
-            get_string('emailaddress', 'assignsubmission_noto'),
-            get_string('status', 'assignsubmission_noto'),
-            get_string('grade', 'assignsubmission_noto'),
-            get_string('maximumgrade', 'assignsubmission_noto'),
-            get_string('gradecanchange', 'assignsubmission_noto'),
-            get_string('lastmodified_submission', 'assignsubmission_noto'),
-            get_string('lastmodified_grade', 'assignsubmission_noto'),
+            '"'.get_string('identifier', 'assignsubmission_noto').'"',
+            '"'.get_string('fullname', 'assignsubmission_noto').'"',
+            '"'.get_string('emailaddress', 'assignsubmission_noto').'"',
+            '"'.get_string('status', 'assignsubmission_noto').'"',
+            '"'.get_string('grade', 'assignsubmission_noto').'"',
+            '"'.get_string('maximumgrade', 'assignsubmission_noto').'"',
+            '"'.get_string('gradecanchange', 'assignsubmission_noto').'"',
+            '"'.get_string('lastmodified_submission', 'assignsubmission_noto').'"',
+            '"'.get_string('lastmodified_grade', 'assignsubmission_noto').'"',
 
         ];
         if ($feedbackcomments) {
-            $headerline[] = get_string('feedback_comments', 'assignsubmission_noto');
+            $headerline[] = '"'.get_string('feedback_comments', 'assignsubmission_noto').'"';
         }
-        $csvdata[] = $headerline;
+
         // CSV content
         $graderecord = \grade_get_grades($cm->course, 'mod', 'assign', $cm->instance, $submission->userid);
         $graderecord = array_pop($graderecord->items);
@@ -567,26 +567,38 @@ class assign_submission_noto extends assign_submission_plugin {
         $user = $DB->get_record('user', ['id' => $submission->userid]);
         $uniqueid = \assign::get_uniqueid_for_user_static($submission->assignment, $submission->userid);
         $userdata = [];
-        $userdata[] = get_string('hiddenuser', 'assign') .$uniqueid;
-        $userdata[] = $user->firstname.' '.$user->lastname;
-        $userdata[] = $user->email;
-        $userdata[] = $submission->status;
-        $userdata[] = $graderecord->grades[$submission->userid]->str_grade;
+	// identifier
+        $userdata[] = '"'.get_string('hiddenuser', 'assign').$uniqueid.'"';
+	// fullname
+        $userdata[] = '"'.$user->firstname.' '.$user->lastname.'"';
+	// emailaddress
+        $userdata[] = '"'.$user->email.'"';
+	// status
+        $userdata[] = '"'.$submission->status.'"';
+	// grade
+	$grade = $graderecord->grades[$submission->userid]->str_grade;
+	if ($grade == '-') {
+	    $grade = '';
+	}
+        $userdata[] = $grade;
+	// maximumgrade
         $userdata[] = intval($graderecord->grademax);
+	// gradecanchange
         $userdata[] = ($graderecord->grades[$submission->userid]->locked ? get_string('no') : get_string('yes'));
+	// lastmodified_submission
         $submissiondate = (empty($graderecord->grades[$submission->userid]->datesubmitted) ? '-' :
             date('d/m/Y H:i:s', $graderecord->grades[$submission->userid]->datesubmitted));
-        $userdata[] = $submissiondate;
+        $userdata[] = '"'.$submissiondate.'"';
+	// lastmodified_grade
         $gradeddate = (empty($graderecord->grades[$submission->userid]->dategraded) ? '-' :
             date('d/m/Y H:i:s', $graderecord->grades[$submission->userid]->dategraded));
-        $userdata[] = $gradeddate;
+        $userdata[] = '"'.$gradeddate.'"';
+	// feedback_comments
         if ($feedbackcomments) {
-            $userdata[] = (empty($graderecord->grades[$submission->userid]->feedback) ? '-' : strip_tags($graderecord->grades[$submission->userid]->feedback));
+            $userdata[] = '"'.(empty($graderecord->grades[$submission->userid]->feedback) ? '-' : strip_tags($graderecord->grades[$submission->userid]->feedback)).'"';
         }
-        $csvdata[] = $userdata;
-        foreach($csvdata as $arr) {
-            $out .= implode(",", $arr) . PHP_EOL;
-        }
+	// Build output - no EOL at the end of the string!
+	$out = implode(',', $headerline).PHP_EOL.implode(',', $userdata);
         return $out;
     }
 
