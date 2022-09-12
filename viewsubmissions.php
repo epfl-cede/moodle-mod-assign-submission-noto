@@ -137,7 +137,7 @@ if ($form->is_cancelled()) {
     }
     $notoremotecopy->path = $new_directory_created;    # only one path here
     $notoremotecopy->timecreated = time();
-    if ($notoremotecopy->id) {
+    if (isset($notoremotecopy->id)) {
         $updatestatus = $DB->update_record('assignsubmission_noto_tcopy', $notoremotecopy);
     } else {
         $notoremotecopy->id = $DB->insert_record('assignsubmission_noto_tcopy', $notoremotecopy);

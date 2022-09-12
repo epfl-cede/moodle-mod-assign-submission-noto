@@ -384,6 +384,7 @@ class assign_submission_noto extends assign_submission_plugin {
         $context = context_module::instance($cm->id);
         # display the "get copy" link only if a teacher uploaded a seed folder
         $action = optional_param('action', '', PARAM_TEXT);
+	$return = '';
         if ($action !== 'grading') {
             $fs = get_file_storage();
             $file_record = array(
@@ -404,7 +405,7 @@ class assign_submission_noto extends assign_submission_plugin {
         }
         $notosubmission = $this->get_noto_submission($submission->id);
         if ($notosubmission) {
-            if ($return) {
+            if (strlen($return)) {
                 $return .= "<br/>\n";
             }
             if (has_capability('mod/assign:grade', $context)) {
@@ -414,7 +415,7 @@ class assign_submission_noto extends assign_submission_plugin {
                     ['href' => (string)new moodle_url('/mod/assign/submission/noto/viewsubmissions.php', ['id' => $submission->id])]
                 );
             } else {
-                if ($return) {
+                if (strlen($return)) {
                     $return .= "<br/>\n";
                 }
                 $return .= html_writer::tag('a', get_string('viewsubmissions', 'assignsubmission_noto'), ['href' => (string)new moodle_url('/mod/assign/submission/noto/submissioncopy.php', ['id' => $submission->id])]);
