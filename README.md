@@ -1,7 +1,7 @@
 # moodle-jupyterhub-plugin
 Jupyterhub plugin for Moodle
 
-This repository contains 2 plugins made for Moodle 3.9
+This repository contains 2 plugins made for Moodle 4.0
 Those plugins are designed to make the communication from Moodle to a JupyterHub installation possible, allowing Moodle users to access their Jupyter files from Moodle - and more.
 
 ## assignsubmission plugin
