@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import 'assignsubmission_noto/jstree';
 import ajax from 'core/ajax';
+import notification from 'core/notification';
 export const init = (courseid, apinotebookpath, redirecttonoto_string) => {
     $(function () {
         var promises = ajax.call([
@@ -28,8 +29,7 @@ export const init = (courseid, apinotebookpath, redirecttonoto_string) => {
                 });
             }
         }).fail(function(ex) {
-            console.log(ex);
-            // do something with the exception
+            notification.exception(ex);
         });
 
         $("#assignsubmission_noto_reloadtree_submit").on('click', function(e) {
@@ -44,8 +44,7 @@ export const init = (courseid, apinotebookpath, redirecttonoto_string) => {
                     $('#jstree').jstree(true).refresh();
                 }
             }).fail(function(ex) {
-                console.log(ex);
-                // do something with the exception
+                notification.exception(ex);
             });
         });
     });

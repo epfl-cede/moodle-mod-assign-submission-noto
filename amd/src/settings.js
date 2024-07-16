@@ -25,35 +25,35 @@
 define(['jquery'], function($) {
 
     function showETHZ() {
-        $('#admin-apiserver').hide();
-        $('#admin-apiwspath').hide();
-        $('#admin-apinotebookpath').hide();
-        $('#admin-apiuser').hide();
-        $('#admin-apikey').hide();
-        $('#admin-maxdepth').hide();
-        $('#admin-userprofilepassword').hide();
-        $('#admin-authmethod').hide();
-        $('#admin-apiurl').show();
-        $('#admin-apiusername').show();
-        $('#admin-apisecretkey').show();
-        $('#admin-apiusernameparam').show();
-        $('#admin-apiusernameparamprefix').show();
+        $('#admin-apiserver:has(label[for*="noto"])').hide();
+        $('#admin-apiwspath:has(label[for*="noto"])').hide();
+        $('#admin-apinotebookpath:has(label[for*="noto"])').hide();
+        $('#admin-apiuser:has(label[for*="noto"])').hide();
+        $('#admin-apikey:has(label[for*="noto"])').hide();
+        $('#admin-maxdepth:has(label[for*="noto"])').hide();
+        $('#admin-userprofilepassword:has(label[for*="noto"])').hide();
+        $('#admin-authmethod:has(label[for*="noto"])').hide();
+        $('#admin-apiurl:has(label[for*="noto"])').show();
+        $('#admin-apiusername:has(label[for*="noto"])').show();
+        $('#admin-apisecretkey:has(label[for*="noto"])').show();
+        $('#admin-apiusernameparam:has(label[for*="noto"])').show();
+        $('#admin-apiusernameparamprefix:has(label[for*="noto"])').show();
     }
 
     function hideETHZ() {
-        $('#admin-apiserver').show();
-        $('#admin-apiwspath').show();
-        $('#admin-apinotebookpath').show();
-        $('#admin-apiuser').show();
-        $('#admin-apikey').show();
-        $('#admin-maxdepth').show();
-        $('#admin-userprofilepassword').show();
-        $('#admin-authmethod').show();
-        $('#admin-apiurl').hide();
-        $('#admin-apiusername').hide();
-        $('#admin-apisecretkey').hide();
-        $('#admin-apiusernameparam').hide();
-        $('#admin-apiusernameparamprefix').hide();
+        $('#admin-apiserver:has(label[for*="noto"])').show();
+        $('#admin-apiwspath:has(label[for*="noto"])').show();
+        $('#admin-apinotebookpath:has(label[for*="noto"])').show();
+        $('#admin-apiuser:has(label[for*="noto"])').show();
+        $('#admin-apikey:has(label[for*="noto"])').show();
+        $('#admin-maxdepth:has(label[for*="noto"])').show();
+        $('#admin-userprofilepassword:has(label[for*="noto"])').show();
+        $('#admin-authmethod:has(label[for*="noto"])').show();
+        $('#admin-apiurl:has(label[for*="noto"])').hide();
+        $('#admin-apiusername:has(label[for*="noto"])').hide();
+        $('#admin-apisecretkey:has(label[for*="noto"])').hide();
+        $('#admin-apiusernameparam:has(label[for*="noto"])').hide();
+        $('#admin-apiusernameparamprefix:has(label[for*="noto"])').hide();
     }
 
     function checkETHZ() {
