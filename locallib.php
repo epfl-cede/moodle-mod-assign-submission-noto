@@ -41,7 +41,6 @@ require_once($CFG->libdir.'/gradelib.php');
  */
 class assign_submission_noto extends assign_submission_plugin {
 
-    const FILEAREA = 'noto_zips'; # also defined in notocopy.php
     const E404 = "lof(): Error code: 404 status: Directory doesn't exist";
 
     /**
@@ -63,11 +62,11 @@ class assign_submission_noto extends assign_submission_plugin {
             $file_record = array(
                 'contextid' => $this->assignment->get_context()->id,
                 'component' => 'assignsubmission_noto',
-                'filearea' => self::FILEAREA,
+                'filearea' => \assignsubmission_noto\constants::FILEAREA,
                 'itemid' => $this->assignment->get_instance()->id,
                 'userid' => $USER->id,
                 'filepath' => '/',
-                'filename' => sprintf('notebook_seed_assignment.zip', $this->assignment->get_instance()->id),
+                'filename' => \assignsubmission_noto\constants::SEEDZIP,
             );
             $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'],
                 $file_record['filepath'], $file_record['filename']);
@@ -77,6 +76,44 @@ class assign_submission_noto extends assign_submission_plugin {
                     array('href' => (string)new \moodle_url('/mod/assign/submission/noto/notocopy.php', array('id' => $submission->id))));
             } else {
                 $return = get_string('no_notebook_provided', 'assignsubmission_noto');
+            }
+            // @EC IM #98310 autograding part
+            // only for teachers
+            if (has_capability('mod/assign:grade', $this->assignment->get_context())) {
+                $autogradeapi = new \assignsubmission_noto\autogradeapi($this->assignment->get_course_module());
+                if ($autogradeapi->is_disabled()) {
+                    $return .= html_writer::tag('br', '');
+                    $return .= get_string('autograding_disabled', 'assignsubmission_noto');
+                } else {
+                    $return .= html_writer::tag('br', '');
+                    if ($autogradeapi->is_suspended()) {
+                        $return .= get_string('autograding_suspended', 'assignsubmission_noto');
+                    } else {
+                        $return .= get_string('autograding_enabled', 'assignsubmission_noto');
+                    }
+                    $return .= '&nbsp;';
+                    $return .= html_writer::tag('a', get_string('disable', 'assignsubmission_noto'),
+                        array('href' => (new \moodle_url('/mod/assign/submission/noto/autograde.php',
+                                array('cmid'=>$this->assignment->get_course_module()->id, 'action'=>'disable')))->out(false),
+                            'id'=>'assignsubmission_noto_autgrd_disable_btn'
+                        )
+                    );
+                    $return .= '&nbsp;';
+                    if ($autogradeapi->is_suspended()) {
+                        $return .= html_writer::tag('a', get_string('unsuspend', 'assignsubmission_noto'),
+                            array('href' => (new \moodle_url('/mod/assign/submission/noto/autograde.php', array('cmid'=>$this->assignment->get_course_module()->id, 'action'=>'unsuspend')))->out(false),
+                            'id'=>'assignsubmission_noto_autgrd_suspend_btn'
+                            )
+                        );
+                    } else {
+                        $return .= html_writer::tag('a', get_string('suspend', 'assignsubmission_noto'),
+                            array('href' => (new \moodle_url('/mod/assign/submission/noto/autograde.php', array('cmid'=>$this->assignment->get_course_module()->id, 'action'=>'suspend')))->out(false),
+                            'id'=>'assignsubmission_noto_autgrd_suspend_btn'
+                            )
+                        );
+                    }
+                    $return .= html_writer::tag('br', '');
+                }
             }
             return html_writer::div(html_writer::tag('h3', $this->get_name()).$return."</br></br>");
         }
@@ -116,7 +153,7 @@ class assign_submission_noto extends assign_submission_plugin {
         $file_record = array(
             'contextid'=>$this->assignment->get_context()->id,
             'component'=>'assignsubmission_noto',
-            'filearea'=>self::FILEAREA,
+            'filearea'=>\assignsubmission_noto\constants::FILEAREA,
             'itemid'=>$assignmentid,
             'userid'=>$USER->id,
             'filepath'=>'/',
@@ -221,20 +258,96 @@ class assign_submission_noto extends assign_submission_plugin {
         if (isset($zfs_response->blob) && $zfs_response->blob) {
             $zip_bin = base64_decode($zfs_response->blob);
             $fs = get_file_storage();
+            // EC IM #98310 inspect the content and extract the autograde directory
+            // For the curious: no it's not possible to inspect the string or bin content of $zip_bin, it must be an on-disk file
+            $requestdir = make_request_directory();
+            #$requestdir = make_temp_directory('autograde_' . time());    # dev use: this leaves the directory available for inspection
+            $requestfilepath = $requestdir.\assignsubmission_noto\constants::SEEDZIP;
+            file_put_contents($requestfilepath, $zip_bin);
+            unset($zip_bin);
+            $za = new ZipArchive();
+            if ($za->open($requestfilepath) === true) {
+                $autogradefiles = array();
+                for ($i = 0; $i < $za->numFiles; $i++) {
+                    $stat = $za->statIndex($i);
+                    if (strpos($stat['name'], \assignsubmission_noto\constants::AUTOGRADEDIR . '/') !== false) {
+                        $pattern = \assignsubmission_noto\constants::AUTOGRADEDIR . '/';
+                        $split = explode($pattern, $stat['name'], 2);
+                        $autogradefiles[$split[0].$pattern][] = $stat['name'];
+                        unset($pattern);
+                        unset($split);
+                    }
+                }
+                $autograde_enabled = false;
+                if ($autogradefiles) {
+                    $tmpautogradedir = $requestdir . '/autograde';
+                    if (mkdir($tmpautogradedir)) {
+                        foreach ($autogradefiles as $aprefix => $afiles) {
+                            # [demo_test/dist/autograder/ => demo_test/dist/autograder/demo-autograder_2023_11_13T10_06_41_734570.zip]
+                            $filepattern = '|^'.$aprefix . '.*'.\assignsubmission_noto\constants::AUTOGRADEDIR.'.*\.zip$'.'|i';
+                            foreach ($afiles as $afile) {
+                                if (preg_match($filepattern, $afile)) {
+                                    if ($za->extractTo($tmpautogradedir, $afile)) {
+                                        $autograde_file = sprintf('%s/%s', $tmpautogradedir, $afile);
+                                        if (is_file($autograde_file) && is_readable($autograde_file)) {
+                                            $file_record = array(
+                                                'contextid'=>$this->assignment->get_context()->id,
+                                                'component'=>'assignsubmission_noto',
+                                                'filearea'=>\assignsubmission_noto\constants::FILEAREA,
+                                                'itemid'=>$this->assignment->get_instance()->id,
+                                                'userid'=>$USER->id,
+                                                'filepath'=>'/',
+                                                'filename'=>\assignsubmission_noto\constants::AUTOGRADEZIP,
+                                            );
+
+                                            $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
+                                            if ($file) {
+                                                $file->delete();
+                                            }
+                                            $fs->create_file_from_pathname($file_record, $autograde_file);
+                                            $autograde_enabled = true;
+                                            break 2;
+                                        } else {
+                                            throw new \coding_exception('Autograde file not found/not readable');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // this should not normally happen unles an OS-level problem
+                        \core\notification::warning(get_string('cannotcreateautogradedir', 'assignsubmission_noto'));
+                    }
+                    // delete the autograder directory - deleting all files deletes the directory too
+                    foreach ($autogradefiles as $aprefix => $afiles) {
+                        foreach ($afiles as $afile) {
+                            if (!$za->deleteName($afile)) {
+                                throw new \moodle_exception('Cannot delete ZIP file: ' . $afile);
+                            }
+                        }
+                    }
+                }
+            } else {
+                // this should never happen
+                \core\notification::warning(get_string('cannotreadsidzip', 'assignsubmission_noto'));
+            }
+            $za->close();
+
+            // save the seed zip
             $file_record = array(
                 'contextid'=>$this->assignment->get_context()->id,
                 'component'=>'assignsubmission_noto',
-                'filearea'=>self::FILEAREA,
+                'filearea'=>\assignsubmission_noto\constants::FILEAREA,
                 'itemid'=>$this->assignment->get_instance()->id,
                 'userid'=>$USER->id,
                 'filepath'=>'/',
-                'filename'=>sprintf('notebook_seed_assignment.zip', $this->assignment->get_instance()->id),
+                'filename'=>\assignsubmission_noto\constants::SEEDZIP,
             );
             $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
             if ($file) {
                 $file->delete();
             }
-            $fs->create_file_from_string($file_record, $zip_bin);
+            $fs->create_file_from_pathname($file_record, $requestfilepath);
         } else {
             throw new \moodle_exception("empty or no blob returned by zfs()");
         }
@@ -330,7 +443,7 @@ class assign_submission_noto extends assign_submission_plugin {
             $file_record = array(
                 'contextid' => $this->assignment->get_context()->id,
                 'component' => 'assignsubmission_noto',
-                'filearea' => self::FILEAREA,
+                'filearea' => \assignsubmission_noto\constants::FILEAREA,
                 'itemid' => $this->assignment->get_instance()->id,
                 'userid' => $USER->id,
                 'filepath' => '/',
@@ -380,21 +493,21 @@ class assign_submission_noto extends assign_submission_plugin {
       */
     public function view_summary(stdClass $submission, &$showviewlink) {
         global $USER;
-        $cm = get_coursemodule_from_instance('assign', $submission->assignment);
+        list($course, $cm) = get_course_and_cm_from_instance($submission->assignment, 'assign');
         $context = context_module::instance($cm->id);
         # display the "get copy" link only if a teacher uploaded a seed folder
         $action = optional_param('action', '', PARAM_TEXT);
-	$return = '';
+        $return = '';
         if ($action !== 'grading') {
             $fs = get_file_storage();
             $file_record = array(
                 'contextid' => $this->assignment->get_context()->id,
                 'component' => 'assignsubmission_noto',
-                'filearea' => self::FILEAREA,
+                'filearea' => \assignsubmission_noto\constants::FILEAREA,
                 'itemid' => $this->assignment->get_instance()->id,
                 'userid' => $USER->id,
                 'filepath' => '/',
-                'filename' => sprintf('notebook_seed_assignment.zip', $this->assignment->get_instance()->id),
+                'filename' => \assignsubmission_noto\constants::SEEDZIP,
             );
             $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
             if ($file) {
@@ -420,6 +533,83 @@ class assign_submission_noto extends assign_submission_plugin {
                 }
                 $return .= html_writer::tag('a', get_string('viewsubmissions', 'assignsubmission_noto'), ['href' => (string)new moodle_url('/mod/assign/submission/noto/submissioncopy.php', ['id' => $submission->id])]);
 
+            }
+        }
+
+        $autogradeapi = new \assignsubmission_noto\autogradeapi($cm);
+        if (!($autogradeapi->is_disabled() || $autogradeapi->is_suspended())) {
+            global $DB;
+            $status = $DB->get_record('assignsubmission_noto_autgrd', array('submission'=>$submission->id));
+            $autograde_status = get_string('autograde_status', 'assignsubmission_noto', get_string('notgraded', 'assignsubmission_noto'));
+            if (strlen($return)) {
+                $return .= "<br/>\n";
+            }
+            if ($status) {
+                if ($status->status == \assignsubmission_noto\constants::PENDING) {
+                    $autograde_status = get_string('autograde_status', 'assignsubmission_noto', get_string('pending', 'assignsubmission_noto'));
+                }
+                if ($status->status == \assignsubmission_noto\constants::GRADED) {
+                    $autograde_status = get_string('autograde_status', 'assignsubmission_noto', get_string('graded', 'assignsubmission_noto'));
+                }
+                if ($status->status == \assignsubmission_noto\constants::GRADINGTIMEOUT) {
+                    $autograde_status = get_string('autograde_status', 'assignsubmission_noto', get_string('gradingtimeout', 'assignsubmission_noto'));
+                }
+                if ($status->status == \assignsubmission_noto\constants::GRADINGFAILED) {
+                    $autograde_status = get_string('autograde_status', 'assignsubmission_noto', get_string('gradingfailed', 'assignsubmission_noto'));
+                    if ($status->exttext) {
+                        $autograde_status .= ':&nbsp;' . $status->exttext;
+                    }
+                }
+            }
+            $return .= $autograde_status;
+            if (strlen($return)) {
+                $return .= "<br/>\n";
+            }
+            if (isset($status->status) && $status->status == \assignsubmission_noto\constants::GRADED) {
+                $fs = get_file_storage();
+                $file_record = array(
+                    'contextid'=>(\context_module::instance($cm->id))->id,
+                    'component'=>'assignsubmission_noto',
+                    'filearea'=>\assignsubmission_noto\constants::FILEAREA,
+                    'itemid'=>$submission->id,
+                    'userid'=>$USER->id,
+                    'filepath'=>'/',
+                    'filename'=>\assignsubmission_noto\constants::RESULTSPDF,
+                );
+                $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
+                if ($file) {
+                    $url = \moodle_url::make_pluginfile_url(
+                        $file->get_contextid(),
+                        $file->get_component(),
+                        $file->get_filearea(),
+                        $file->get_itemid(),
+                        $file->get_filepath(),
+                        $file->get_filename(),
+                        false                     // Do not force download of the file.
+                    );
+                    if ($url) {
+                        $return .= \html_writer::tag('a', get_string('autogradepdf', 'assignsubmission_noto'), array('href'=>$url->out(false)));
+                    }
+                }
+                if (has_capability('mod/assign:grade', $context)) {
+                    $file_record['filename'] = \assignsubmission_noto\constants::RESULTSJSON;
+                    $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
+                    if ($file) {
+                        $return .= \html_writer::tag('br', '');
+                        $url = \moodle_url::make_pluginfile_url(
+                            $file->get_contextid(),
+                            $file->get_component(),
+                            $file->get_filearea(),
+                            $file->get_itemid(),
+                            $file->get_filepath(),
+                            $file->get_filename(),
+                            false                     // Do not force download of the file.
+                        );
+                        if ($url) {
+                            $return .= \html_writer::tag('a', get_string('autogradejson', 'assignsubmission_noto'), array('href'=>$url->out(false)));
+                        }
+                    }
+                }
             }
         }
         return $return;
@@ -461,7 +651,7 @@ class assign_submission_noto extends assign_submission_plugin {
         $fsfiles = $fs->get_area_files(
             $this->assignment->get_context()->id,   # $contextid
             'assignsubmission_noto',                # $component
-            self::FILEAREA,                         # $filearea
+            \assignsubmission_noto\constants::FILEAREA, # $filearea
             $assignmentid                           # $itemid
         );
         foreach ($fsfiles as $file) {
@@ -501,7 +691,7 @@ class assign_submission_noto extends assign_submission_plugin {
      * @return array - An array of fileareas (keys) and descriptions (values)
      */
     public function get_file_areas() {
-        return array(self::FILEAREA=>$this->get_name());
+        return array(\assignsubmission_noto\constants::FILEAREA=>$this->get_name());
     }
 
 
@@ -519,7 +709,7 @@ class assign_submission_noto extends assign_submission_plugin {
         $file_record = array(
             'contextid'=>$this->assignment->get_context()->id,
             'component'=>'assignsubmission_noto',
-            'filearea'=>self::FILEAREA,
+            'filearea'=>\assignsubmission_noto\constants::FILEAREA,
             'itemid'=>$this->assignment->get_instance()->id,
             'userid'=>$user->id,
             'filepath'=>'/',
@@ -627,7 +817,7 @@ class assign_submission_noto extends assign_submission_plugin {
             $fileinfo = array(
                 'contextid' => $context->id,
                 'component' => 'assignsubmission_noto',
-                'filearea' => self::FILEAREA,
+                'filearea' => \assignsubmission_noto\constants::FILEAREA,
                 'itemid' => $cm->instance,
                 'filepath'=>'/',
                 'filename' => $zipfilename);
@@ -651,7 +841,7 @@ class assign_submission_noto extends assign_submission_plugin {
         $noto_name = self::get_noto_config_name($submission->assignment);
         $zipfilename = sprintf($noto_name.'_user%s_grading.zip', $submission->userid);
         $fs = get_file_storage();
-        $file = $fs->get_file($context->id, 'assignsubmission_noto', self::FILEAREA, $cm->instance, '/', $zipfilename);
+        $file = $fs->get_file($context->id, 'assignsubmission_noto', \assignsubmission_noto\constants::FILEAREA, $cm->instance, '/', $zipfilename);
         return $file->delete();
     }
 
@@ -753,6 +943,57 @@ class assign_submission_noto extends assign_submission_plugin {
         return $noto_name;
     }
 
+    /**
+     * Proxy function to call send_to_autograde_user() for every particular user
+     * Called from view_batch_autograde() from /mod/assign/feedback/noto/locallib.php
+     *
+     * @param cm_info $cm
+     * @param array $userids - array of int
+     */
+    public static function send_to_autograde_users(\cm_info $cm, array $userids) {
+        # TODO: is this a NOTO assignment??
+        global $DB;
+        foreach ($userids as $userid) {
+            $submission = $DB->get_record('assign_submission', array('assignment'=>$cm->instance, 'userid'=>$userid));
+            if ($submission) {
+                self::send_to_autograde_submission($cm, $submission->id);
+            }
+        }
+    }
 
+    /**
+     * Send the submission for autograde
+     *
+     * @param cm_info $cm
+     * @param int $submissionid
+     * @return stdClass updated assignsubmission_noto_autgrd record
+     *
+     */
+     public static function send_to_autograde_submission(\cm_info $cm, int $submissionid): stdClass {
+         global $DB;
+         $existing_record = $DB->get_record('assignsubmission_noto_autgrd', array('submission'=>$submissionid));
+         if (!$existing_record) {
+             $existing_record = $DB->insert_record('assignsubmission_noto_autgrd', (object)array('submission'=>$submissionid, 'attempt'=>1));
+             $existing_record = $DB->get_record('assignsubmission_noto_autgrd', array('id'=>$existing_record));
+         }
+         $autogradeapi = new \assignsubmission_noto\autogradeapi($cm);
+         $autograde_return = $autogradeapi->send_for_autograde($submissionid);
+         $existing_record->timesent = time();
+         if ($autograde_return == \assignsubmission_noto\constants::OK) {
+             $existing_record->status = \assignsubmission_noto\constants::PENDING;
+             $existing_record->exttext = '';
+         } else if ($autograde_return == '') {
+             // this is not excatly the grading timeout: it is the autograding call timeout, when the autograding initiation call did not return any data
+             // considered a timeout anyway
+             $existing_record->status = \assignsubmission_noto\constants::GRADINGTIMEOUT;
+             $existing_record->exttext = '';
+         } else {
+             $existing_record->status = \assignsubmission_noto\constants::GRADINGFAILED;
+             $existing_record->exttext = $autograde_return;
+         }
+         $existing_record->attempt = $existing_record->attempt + 1;
+         $DB->update_record('assignsubmission_noto_autgrd', $existing_record);
+         return $existing_record;
+     }
 }
 

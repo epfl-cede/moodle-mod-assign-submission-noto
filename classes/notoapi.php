@@ -143,7 +143,7 @@ class notoapi {
     }
 
     /**
-     * /lof API call (List Of Files). It's an exect copy of lod(), it only outputs additionally files in directories
+     * /lof API call (List Of Files). It's an exact copy of lod(), it only outputs additionally files in directories
      * @param string $path
      * @param stdClass $user
      * @return array response

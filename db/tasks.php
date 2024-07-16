@@ -15,15 +15,23 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the version information for the noto submission plugin
+ * Scheduled tasks for assignsubmission_noto
  *
  * @package    assignsubmission_noto
- * @copyright 2012 NetSpot {@link http://www.netspot.com.au}
+ * @subpackage db
+ * @since      Moodle 4.3
+ * @copyright  2024 Enovation
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2024050205;
-$plugin->requires  = 2020060900;
-$plugin->component = 'assignsubmission_noto';
+$tasks = [
+    [
+        'classname' => 'assignsubmission_noto\task\retry_autograde',
+        'blocking' => 0,
+        'minute' => '*',
+        'hour' => '*',
+        'day' => '*',
+        'month' => '*',
+        'dayofweek' => '0',
+    ],
+];

@@ -56,5 +56,39 @@
         </INDEXES>
     </TABLE>
     <!-- ................................................................................................................................. -->
+    <TABLE NAME="assignsubmission_noto_assign" COMMENT="Info about whole assignment instance">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+            <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+            <FIELD NAME="autograde_suspended" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+            <FIELD NAME="autograde_disabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="cannot be undone via GUI"/>
+            <FIELD NAME="ext_int1" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="spare field"/>
+            <FIELD NAME="ext_int2" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="spare field"/>
+            <FIELD NAME="ext_char1" TYPE="char" LENGTH="256" NOTNULL="false" SEQUENCE="false" COMMENT="spare field"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+            <KEY NAME="noto_assignment_assignment_uix" TYPE="unique" FIELDS="assignment"/>
+        </KEYS>
+    </TABLE>
+    <!-- ................................................................................................................................. -->
+    <TABLE NAME="assignsubmission_noto_autgrd" COMMENT="Information about autograding state">
+        <FIELDS>
+            <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+            <FIELD NAME="submission" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+            <FIELD NAME="timesent" TYPE="int" LENGTH="20" NOTNULL="false" SEQUENCE="false"/>
+            <FIELD NAME="attempt" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false"/>
+            <FIELD NAME="status" TYPE="char" LENGTH="14" NOTNULL="false" SEQUENCE="false"/>
+            <FIELD NAME="extint" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+            <FIELD NAME="exttext" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        </FIELDS>
+        <KEYS>
+            <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        </KEYS>
+        <INDEXES>
+            <INDEX NAME="noto_autograde_submission_uix" UNIQUE="true" FIELDS="submission"/>
+        </INDEXES>
+    </TABLE>
+    <!-- ................................................................................................................................. -->
   </TABLES>
 </XMLDB>
