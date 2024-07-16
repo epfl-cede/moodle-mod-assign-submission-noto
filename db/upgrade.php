@@ -30,7 +30,8 @@ defined('MOODLE_INTERNAL') || die();
  * @return bool
  */
 function xmldb_assignsubmission_noto_upgrade($oldversion) {
-    global $CFG;
+    global $CFG, $DB;
+    $dbman = $DB->get_manager();
 
     // Automatically generated Moodle v3.5.0 release upgrade line.
     // Put any upgrade step following this.
@@ -46,6 +47,59 @@ function xmldb_assignsubmission_noto_upgrade($oldversion) {
 
     // Automatically generated Moodle v3.9.0 release upgrade line.
     // Put any upgrade step following this.
+    if ($oldversion < 2024050200) {
 
+        // Define table assignsubmission_noto_assign to be created.
+        $table = new xmldb_table('assignsubmission_noto_assign');
+
+        // Adding fields to table assignsubmission_noto_assign.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('assignment', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('autograde_suspended', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('autograde_disabled', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('ext_int1', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('ext_int2', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('ext_char1', XMLDB_TYPE_CHAR, '256', null, null, null, null);
+
+        // Adding keys to table assignsubmission_noto_assign.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('noto_assignment_assignment_uix', XMLDB_KEY_UNIQUE, ['assignment']);
+
+        // Conditionally launch create table for assignsubmission_noto_assign.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Noto savepoint reached.
+        upgrade_plugin_savepoint(true, 2024050200, 'assignsubmission', 'noto');
+    }
+    if ($oldversion < 2024050202) {
+
+        // Define table assignsubmission_noto_autgrd to be created.
+        $table = new xmldb_table('assignsubmission_noto_autgrd');
+
+        // Adding fields to table assignsubmission_noto_autgrd.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('submission', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timesent', XMLDB_TYPE_INTEGER, '20', null, null, null, null);
+        $table->add_field('attempt', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('status', XMLDB_TYPE_CHAR, '14', null, null, null, null);
+        $table->add_field('extint', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('exttext', XMLDB_TYPE_TEXT, null, null, null, null, null);
+
+        // Adding keys to table assignsubmission_noto_autgrd.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+
+        // Adding indexes to table assignsubmission_noto_autgrd.
+        $table->add_index('noto_autograde_submission_uix', XMLDB_INDEX_UNIQUE, ['submission']);
+
+        // Conditionally launch create table for assignsubmission_noto_autgrd.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Noto savepoint reached.
+        upgrade_plugin_savepoint(true, 2024050202, 'assignsubmission', 'noto');
+    }
     return true;
 }

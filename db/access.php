@@ -19,6 +19,7 @@
  *
  * @package   assignsubmission_noto
  * @copyright 2012 NetSpot {@link http://www.netspot.com.au}
+ * @copyright 2024 Enovation Solutions
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

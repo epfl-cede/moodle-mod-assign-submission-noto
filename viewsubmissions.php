@@ -25,7 +25,6 @@
 require_once(dirname(__FILE__). '/../../../../config.php');
 require_once(dirname(__FILE__). '/locallib.php');
 require_once($CFG->libdir . '/formslib.php');
-define('FILEAREA', 'noto_zips');    # it is also a constant in class assign_submission_noto in locallib.php, but i'm not requiring it only for 1 constant
 
 $submissionid = required_param('id', PARAM_INT);
 $submission = $DB->get_record('assign_submission', array('id'=>$submissionid));
@@ -91,7 +90,7 @@ if ($form->is_cancelled()) {
     $file_record = array(
         'contextid'=>$context->id,
         'component'=>'assignsubmission_noto',
-        'filearea'=>FILEAREA,
+        'filearea'=>\assignsubmission_noto\constants::FILEAREA,
         'itemid'=>$cm->instance,
         'filepath'=>'/',
         'filename'=>sprintf($noto_name.'_user%s.zip', $submission->userid),

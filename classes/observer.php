@@ -15,15 +15,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the version information for the noto submission plugin
+ * An event observer.
  *
- * @package    assignsubmission_noto
- * @copyright 2012 NetSpot {@link http://www.netspot.com.au}
+ * @package    assignfeedback_editpdf
+ * @copyright  2016 Damyon Wiese
+ * @copyright  2024 Enovation Solution
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+namespace assignsubmission_noto;
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2024050205;
-$plugin->requires  = 2020060900;
-$plugin->component = 'assignsubmission_noto';
+class observer {
+    /**
+     * Process the assessable_submitted event.
+     * @param \mod_assign\event\assessable_submitted $event The submission created/updated event.
+     */
+    public static function assessable_submitted($event) {
+        $submissionid = $event->get_data()['objectid'];
+        $cm = $event->get_assign()->get_course_module();
+        $autogradeapi = new \assignsubmission_noto\autogradeapi($cm);
+        if (!($autogradeapi->is_suspended() || $autogradeapi->is_disabled())) {
+            \assign_submission_noto::send_to_autograde_submission($cm, $submissionid);
+        }
+    }
+}

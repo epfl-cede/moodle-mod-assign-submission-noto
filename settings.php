@@ -80,4 +80,23 @@ $settings->add(new admin_setting_configtext('assignsubmission_noto/executiontime
     new lang_string('executiontimeout', 'assignsubmission_noto'),
     new lang_string('executiontimeout_help', 'assignsubmission_noto'), 10, PARAM_INT));
 
+/* ===================== Automatic grading settings =================================== */
+$settings->add(new admin_setting_heading('automaticgradingsettings', get_string('automaticgradingsettings', 'assignsubmission_noto'), ''));
+$settings->add(new admin_setting_configtext('assignsubmission_noto/automaticgrading_url',
+                   new lang_string('automaticgrading_url', 'assignsubmission_noto'),
+                   new lang_string('automaticgrading_url_help', 'assignsubmission_noto'), '', PARAM_URL, 60));
+$settings->add(new admin_setting_configtext('assignsubmission_noto/automaticgrading_token_send',
+                   new lang_string('automaticgrading_token_send', 'assignsubmission_noto'),
+                   new lang_string('automaticgrading_token_send_help', 'assignsubmission_noto'), '', PARAM_TEXT));
+$settings->add(new admin_setting_configtext('assignsubmission_noto/automaticgrading_token_receive',
+                   new lang_string('automaticgrading_token_receive', 'assignsubmission_noto'),
+                   new lang_string('automaticgrading_token_receive_help', 'assignsubmission_noto'), '', PARAM_TEXT));
+$settings->add(new admin_setting_configtext('assignsubmission_noto/automaticgrading_job_timeout',
+                   new lang_string('automaticgrading_job_timeout', 'assignsubmission_noto'),
+                   new lang_string('automaticgrading_job_timeout_help', 'assignsubmission_noto'), 300, PARAM_INT));
+$settings->add(new admin_setting_configtext('assignsubmission_noto/automaticgrading_gradingattempt_retries',
+                   new lang_string('automaticgrading_gradingattempt_retries', 'assignsubmission_noto'),
+                   new lang_string('automaticgrading_gradingattempt_retries_help', 'assignsubmission_noto'), 10, PARAM_INT));
+
+/* ==================================================================================== */
 $PAGE->requires->js_call_amd('assignsubmission_noto/settings', 'init');

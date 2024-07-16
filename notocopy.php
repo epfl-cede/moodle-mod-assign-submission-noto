@@ -25,7 +25,6 @@
 require_once(dirname(__FILE__). '/../../../../config.php');
 require_once(dirname(__FILE__). '/locallib.php');
 require_once($CFG->libdir . '/formslib.php');
-define('FILEAREA', 'noto_zips');    # it is also a constant in class assign_submission_noto in locallib.php, but i'm not requiring it only for 1 constant
 
 class notocopy_form extends moodleform {
     /**
@@ -97,10 +96,10 @@ if ($form->is_cancelled()) {
     $file_record = array(
         'contextid'=>$context->id,
         'component'=>'assignsubmission_noto',
-        'filearea'=>FILEAREA,
+        'filearea'=>\assignsubmission_noto\constants::FILEAREA,
         'itemid'=>$cm->instance,
         'filepath'=>'/',
-        'filename'=>sprintf('notebook_seed_assignment.zip', $cm->instance),
+        'filename'=>\assignsubmission_noto\constants::SEEDZIP,
     );
     $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
     if (!$file) {

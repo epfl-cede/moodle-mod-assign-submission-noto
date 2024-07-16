@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once("$CFG->libdir/externallib.php");
 require_once("locallib.php");
+require_once($CFG->dirroot.'/mod/assign/locallib.php');
 
 
 /**
@@ -110,4 +111,235 @@ class assignsubmission_noto_external extends external_api {
             )
         );
     }
+    /**
+     * Returns description of method parameters
+     *
+     * @return external_function_parameters
+     * @since  Moodle 4.3
+     */
+    public static function autograde_parameters() {
+        return new external_function_parameters(
+            array(
+                'input' => new external_value(PARAM_TEXT, 'Input JSON')
+            )
+        );
+    }
+
+    /**
+     * Describes the return value for assignsubmission_noto
+     *
+     * @return external_single_structure
+     * @since Moodle 4.3
+     */
+    public static function autograde_returns() {
+        return new external_single_structure(
+            array(
+                'status'  => new external_value(PARAM_TEXT, 'Always OK')
+            )
+        );
+    }
+
+    /**
+     * @param text $input required JSON-encoded input
+     * @return array
+     * @since  Moodle 4.3
+     */
+    public static function autograde ($input) {
+        global $DB;
+
+        $headers = getallheaders();
+        if (!isset($headers['Access-token'])) {
+            throw new \moodle_exception('No "Access-token" header (case sensitive)');
+        }
+        $config = get_config('assignsubmission_noto', 'automaticgrading_token_receive');
+        if (!$config) {
+            throw new \moodle_exception('assignsubmission_noto plugin misconfigured: missing "automaticgrading_token_receive"');
+        }
+        if ($headers['Access-token'] != $config) {
+            throw new \moodle_exception('Wrong access token');
+        }
+
+        if (empty($input)) {
+            throw new \moodle_exception('Input empty');
+        }
+        $params = self::validate_parameters(
+            self::autograde_parameters(),
+            array(
+                'input' => $input,
+            )
+        );
+        if (empty($params['input'])) {
+            throw new \moodle_exception('Input empty after validation');
+        }
+        if (!is_string($params['input']) && !is_integer($params['input'])) {
+            throw new \moodle_exception("Unexpected JSON data type: " . gettype($params['input']));
+        }
+        $json = json_decode(urldecode($params['input']));
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \moodle_exception("JSON decoding error: " . json_last_error_msg() . ' (code: ' . json_last_error() . ')');
+        }
+
+        if (empty($json->submission_id)) {
+            throw new invalid_parameter_exception('Missing required key in single structure: submission_id');
+        }
+
+        // course_id not important
+
+        $submission = $DB->get_record('assign_submission', array('id'=>$json->submission_id));
+        if (!$submission) {
+            throw new \moodle_exception('Wrong submission id');
+        }
+        list($course, $cm) = get_course_and_cm_from_instance($submission->assignment, 'assign');
+        $context = \context_module::instance($cm->id);
+        $assign = new \assign($context, $cm, $course);
+
+        if (isset($json->rc) && $json->rc) {   // non-zero "rc"
+            $rc = $json->rc;
+            if (isset(\assignsubmission_noto\constants::$rc[$json->rc])) {
+                $rc = \assignsubmission_noto\constants::$rc[$json->rc];
+            }
+            \assignsubmission_noto\autogradeapi::upgrade_autograding_record($submission->id, array(
+                'status' => \assignsubmission_noto\constants::GRADINGFAILED,
+                'timesent' => time(),
+                'exttext' => $rc,
+            ));
+            return array('status'=>'OK');
+        }
+
+        // unzip the solution
+        $requestdir = make_request_directory();
+        #$requestdir = make_temp_directory('autograde_' . time());    // dev use: this leaves the directory available for inspection
+        $requestfilepath = $requestdir.'/'.\assignsubmission_noto\constants::RESULTZIP;
+        file_put_contents($requestfilepath, base64_decode($json->results));
+        $za = new ZipArchive();
+        $zo = $za->open($requestfilepath);
+        if ($zo === true) {
+            $afiles = array();
+            for ($i = 0; $i < $za->numFiles; $i++) {
+                $stat = $za->statIndex($i);
+                if (strpos($stat['name'], \assignsubmission_noto\constants::RESULTSJSON ) !== false) {
+                    $afiles['json'] = $stat['name'];
+                }
+                if (strpos($stat['name'], \assignsubmission_noto\constants::RESULTSPDF ) !== false) {
+                    $afiles['pdf'] = $stat['name'];
+                }
+            }
+            if ($za->extractTo($requestdir, array_values($afiles))) {   // filelist cannot have non-numerkcal keys, while we need them
+                $json_file = $requestdir.'/'.$afiles['json'];
+                $pdf_file = $requestdir.'/'.$afiles['pdf'];
+                if (!file_exists($json_file)) {
+                    throw new \moodle_exception('No '.\assignsubmission_noto\constants::RESULTSJSON.' file in results');
+                }
+
+                if (is_file($json_file) && is_readable($json_file)) {
+                    $json_content = file_get_contents($json_file);
+                    $json_decoded = json_decode($json_content);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        throw new \moodle_exception("Cannot decode JSON " . json_last_error_msg() . ' (code: ' . json_last_error() . ')');
+                    }
+                    if (empty($json_decoded)) {
+                        throw new \moodle_exception("Empty JSON after decoding");
+                    }
+                    if (empty($json_decoded->tests)) {
+                        throw new \moodle_exception("No 'tests' in JSON");
+                    }
+                    $score = 0;
+                    $max_score = 0;
+                    foreach ($json_decoded->tests as $test) {
+                        if (!empty($test->score)) {
+                            $score += $test->score;
+                        }
+                        if (!empty($test->max_score)) {
+                            $max_score += $test->max_score;
+                        }
+                    }
+                    $gradingmanager = get_grading_manager($context, 'mod_assign', 'submissions');
+                    $gradingmethod = $gradingmanager->get_active_method();
+                    if (!$gradingmethod) {
+                        \assignsubmission_noto\autogradeapi::upgrade_autograding_record($submission->id, array(
+                            'status' => \assignsubmission_noto\constants::GRADINGFAILED,
+                            'timesent' => time(),
+                            'exttext' => \assignsubmission_noto\constants::$rc[97],    // synthetic NO_GRADING_CONFIGURED, added on request
+                        ));
+                        throw new \moodle_exception('Empty grading method - is grading configured correctly for cmid ' . $cm->id);
+                    }
+                    $controller = $gradingmanager->get_controller($gradingmethod);
+                    if ($controller->is_form_available()) {
+
+                        $grademenu = make_grades_menu($assign->get_grade_item()->grademax);
+                        $allowgradedecimals = $assign->get_grade_item()->grademax > 0;
+                        $controller->set_grade_range($grademenu, $allowgradedecimals);  // these 3 lines are garbage, but mandatory
+
+                        $grade = $assign->get_user_grade($submission->userid, true);    // 3rd param $attemptnumber == NULL for the latest attempt
+                        $itemid = null;
+                        if ($grade) {
+                            $itemid = $grade->id;
+                        }
+
+                        $gradinginstance = $controller->get_or_create_instance(0, $submission->userid, $itemid);
+
+                        $criteria = $controller->get_definition()->guide_criteria;
+                        $currentguide = $gradinginstance->get_guide_filling();
+                        $first_criterion_index = 0;
+
+                        // $criteria is the array of the marking guide criteria. The first criterion (min id) is assumed the automated grading
+                        if ($criteria && $j = min(array_keys($criteria))) {
+                            $first_criterion_index = $j;
+                        } else {
+                            \assignsubmission_noto\autogradeapi::upgrade_autograding_record($submission->id, array(
+                                'status' => \assignsubmission_noto\constants::GRADINGFAILED,
+                                'timesent' => time(),
+                                'exttext' => \assignsubmission_noto\constants::$rc[98],    // synthetic NO_MARKING_ENABLED, added on request
+                            ));
+                            throw new \moodle_exception(sprintf('Marking guide does not seem enabled or configured for assignment cmid %d', $cm->id));
+                        }
+                        $currentguide['criteria'][$first_criterion_index]['score'] = $score;    // modify or create the first criterion's score
+                        $grade->grade = $gradinginstance->submit_and_get_grade($currentguide, $grade->id);
+                        $assign->update_grade($grade);  // this recalculates the final grade
+                    } else {
+                        \assignsubmission_noto\autogradeapi::upgrade_autograding_record($submission->id, array(
+                            'status' => \assignsubmission_noto\constants::GRADINGFAILED,
+                            'timesent' => time(),
+                            'exttext' => \assignsubmission_noto\constants::$rc[97],    // synthetic NO_GRADING_CONFIGURED, added on request
+                        ));
+                        throw new \coding_exception("Controller's form not available"); // should never happen
+                    }
+                } else {
+                    throw new \coding_exception('Cannot read '.\assignsubmission_noto\constants::RESULTSJSON);
+                }
+                $fs = get_file_storage();
+                $file_record = array(
+                    'contextid'=>$context->id,
+                    'component'=>'assignsubmission_noto',
+                    'filearea'=>\assignsubmission_noto\constants::FILEAREA,
+                    'itemid'=>$submission->id,
+                    'userid'=>$submission->userid,
+                    'filepath'=>'/',
+                    'filename'=>\assignsubmission_noto\constants::RESULTSJSON,
+                );
+                $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
+                if ($file) {
+                    $file->delete();
+                }
+                $fs->create_file_from_pathname($file_record, $json_file);
+                if (file_exists($pdf_file) && is_file($pdf_file) && is_readable($pdf_file)) {
+                    $file_record['filename'] = \assignsubmission_noto\constants::RESULTSPDF;
+                    $file = $fs->get_file($file_record['contextid'], $file_record['component'], $file_record['filearea'], $file_record['itemid'], $file_record['filepath'], $file_record['filename']);
+                    if ($file) {
+                        $file->delete();
+                    }
+                    $fs->create_file_from_pathname($file_record, $pdf_file);
+                }
+            }
+            \assignsubmission_noto\autogradeapi::upgrade_autograding_record($submission->id, array(
+                'status' => \assignsubmission_noto\constants::GRADED,
+                'timesent' => time(),    // With GRADED, timesent is the timestamp of the grading
+            ));
+        } else {
+            throw new \moodle_exception("Cannot open the result zip. Code: " . $zo);    // see https://www.php.net/manual/en/ziparchive.open.php (comments) for codes
+        }
+
+        return array('status'=>'OK');
+    }
+
 }
