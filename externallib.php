@@ -147,15 +147,15 @@ class assignsubmission_noto_external extends external_api {
     public static function autograde ($input) {
         global $DB;
 
-        $headers = getallheaders();
-        if (!isset($headers['Access-token'])) {
-            throw new \moodle_exception('No "Access-token" header (case sensitive)');
+        $headers = array_change_key_case(getallheaders());
+        if (!isset($headers['access-token'])) {
+            throw new \moodle_exception('No "Access-token" header (case insensitive)');
         }
         $config = get_config('assignsubmission_noto', 'automaticgrading_token_receive');
         if (!$config) {
             throw new \moodle_exception('assignsubmission_noto plugin misconfigured: missing "automaticgrading_token_receive"');
         }
-        if ($headers['Access-token'] != $config) {
+        if ($headers['access-token'] != $config) {
             throw new \moodle_exception('Wrong access token');
         }
 
