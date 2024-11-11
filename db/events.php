@@ -15,15 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the version information for the noto submission plugin
+ * Event handler definition.
  *
- * @package    assignsubmission_noto
- * @copyright 2012 NetSpot {@link http://www.netspot.com.au}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package assignsubmission_noto
+ * @category event
+ * @copyright 2010 Petr Skoda  {@link http://skodak.org}
+ * @copyright 2024 Enovation Solutions
+ * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->version   = 2024050205;
-$plugin->requires  = 2020060900;
-$plugin->component = 'assignsubmission_noto';
+$observers = array(
+    array(
+        'eventname'   => '\mod_assign\event\assessable_submitted',
+        'callback'    => '\assignsubmission_noto\observer::assessable_submitted',
+    ),
+);

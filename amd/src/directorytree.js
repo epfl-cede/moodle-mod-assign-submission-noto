@@ -15,7 +15,7 @@ export const init = (courseid, apinotebookpath, redirecttonoto_string) => {
                 });
                 $('#jstree').html(warnings);
             } else {
-                var src = jQuery.parseJSON(response.result);
+                var src = JSON.parse(response.result);
                 $('#jstree').jstree({ 'core' : {
                         'data' : src
                     }});
@@ -38,7 +38,7 @@ export const init = (courseid, apinotebookpath, redirecttonoto_string) => {
                 { methodname: 'assignsubmission_noto_get_jstree_json', args: { courseid: courseid} },
             ]);
             refreshpromises[0].done(function(response) {
-                var src = jQuery.parseJSON(response.result);
+                var src = JSON.parse(response.result);
                 if (src) {
                     $('#jstree').jstree(true).settings.core.data = src;
                     $('#jstree').jstree(true).refresh();

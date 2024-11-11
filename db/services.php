@@ -34,4 +34,15 @@ $functions = array(
                 'capabilities'  => 'mod/assign:view',
                 'loginrequired' => true,
         ),
+        'assignsubmission_noto_autograde' => array(
+                'classname'     => 'assignsubmission_noto_external',
+                'methodname'    => 'autograde',
+                'classpath'     => 'mod/assign/submission/noto/externallib.php',
+                'description'   => 'Autograde',
+                'type'          => 'write',
+                'ajax'          => false,
+                'capabilities'  => 'mod/assign:grade',
+                'loginrequired' => true,
+        ),
+
 );
