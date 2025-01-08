@@ -1,8 +1,12 @@
-# moodle-jupyterhub-plugin
+# moodle-mod-assign-submission-noto
 Jupyterhub plugin for Moodle
 
-This repository contains 2 plugins made for Moodle 4.3.
-Those plugins are designed to make the communication from Moodle to a JupyterHub installation possible, allowing Moodle users to access their Jupyter files from Moodle - and more.
+This repository contains a plugins made for Moodle 4.x
+The plugins are designed to make the communication from Moodle to a JupyterHub installation possible, allowing Moodle users to access their Jupyter files from Moodle - and more.
+
+## Versioning
+
+Tag _v3.2.1_ works with Moodle 4.3. Later versions can be found in branches like MOODLE_405_STABLE, for Moodle 4.5
 
 ## assignsubmission plugin
 
@@ -13,6 +17,8 @@ This plugin adds a new type of Assignments: Jupyter notebooks.
 ## assignfeedback plugin
 
 This plugin is still under development ; the current version allows teachers to download all students' submissions in one click into the teacher's Jupyter workspace.
+
+See [epfl-cede/moodle-mod-assign-feedback-noto](https://github.com/epfl-cede/moodle-mod-assign-feedback-noto).
 
 # Installation
 
