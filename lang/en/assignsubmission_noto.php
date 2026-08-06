@@ -132,9 +132,9 @@ $string['notoaccount_notfound'] = 'Your Jupyter workspace could not be found. Pl
 $string['userprofilepassword'] = 'Password to access userprofile script';
 $string['userprofilepassword_help'] = 'ALPHANUM characters only';
 $string[''] = '';
-/* ETHZ Installation settings */
-$string['ethzinstallation'] = 'ETHZ Installation';
-$string['ethzinstallation_help'] = 'If checkbox is enabled, then only ETHZ installation settings will be showed.';
+/* Kubernetes Installation settings */
+$string['ethzinstallation'] = 'Kubernetes Installation';
+$string['ethzinstallation_help'] = 'If checkbox is enabled, then only Kubernetes Installation settings will be showed.';
 $string['apiurl'] = 'API URL';
 $string['apiurl_help'] = 'This API URL should include course id placeholder "[courseid]" (e.g. https://web2-xxx-[courseid].vvv.ethz.ch).
 It will be replaced automatically by course id.';
