@@ -24,6 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024050205;
+$plugin->version   = 2026080600;
 $plugin->requires  = 2020060900;
 $plugin->component = 'assignsubmission_noto';

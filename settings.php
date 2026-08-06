@@ -55,7 +55,7 @@ $settings->add(new admin_setting_configselect('assignsubmission_noto/authmethod'
     new lang_string('authmethod', 'assignsubmission_noto'),
     new lang_string('authmethod_help', 'assignsubmission_noto'), 'test', $paramsoptions));
 
-/* ===================== ETHZ installation settings =================================== */
+/* ===================== Kubernetes Installation settings =================================== */
 $settings->add(new admin_setting_configtext('assignsubmission_noto/apiurl',
                    new lang_string('apiurl', 'assignsubmission_noto'),
                    new lang_string('apiurl_help', 'assignsubmission_noto'), 'https://web2-xxx-[courseid].vvv.ethz.ch', PARAM_RAW, 60));

@@ -43,7 +43,7 @@ See this repository for the API: [epfl-cede/jupyterhub-fileserver-api](https://g
 Go to _Site administration_ and set some global options first:
 
 ## Kubernetes
-Select the option _ETHZ Installation_ to switch to the settings suitable for Kubernetes.
+Select the option _Kubernetes Installation_ to switch to the settings suitable for Kubernetes.
 
 ### API URL
 At ETHZ, we run one JupyterHub per Moodle course, isolated in different namespaces. The key for the
