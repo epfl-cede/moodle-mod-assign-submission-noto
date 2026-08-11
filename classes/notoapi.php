@@ -40,7 +40,7 @@ class notoapi {
      */
     public function __construct ($courseid = null) {
         $this->modconfig = get_config('assignsubmission_noto');
-        if ($this->modconfig->ethz) {
+        if ($this->modconfig->kubernetes_mode) {
             if (empty($this->modconfig->apiurl)) {
                 throw new \moodle_exception('"assignsubmission_noto | apiurl" not configured, see Site adm - Plugins - Activity modules - Assignment - Submission plugins - Jupiter Notebooks');
             } else {
@@ -378,7 +378,7 @@ class notoapi {
      * @return string hashed payload
      */
     private function hash_payload (string $payload, string $md5_payload, int $timestamp) : string {
-        if ($this->modconfig->ethz) {
+        if ($this->modconfig->kubernetes_mode) {
             return base64_encode(hash_hmac('sha256', $this->modconfig->apiusername.$timestamp.$md5_payload,
                 $this->modconfig->apisecretkey, true));
         } else {
@@ -419,7 +419,7 @@ class notoapi {
      */
     private static function noto_userid (\stdClass $user): string {
         $config = get_config('assignsubmission_noto');
-        if ($config->ethz) {
+        if ($config->kubernetes_mode) {
             return $config->apiusernameparamprefix.$user->{$config->apiusernameparam};
         } else {
             if (!empty($user->idnumber)) {

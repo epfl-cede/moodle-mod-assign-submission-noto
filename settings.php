@@ -26,9 +26,9 @@
 $settings->add(new admin_setting_configcheckbox('assignsubmission_noto/default',
                    new lang_string('default', 'assignsubmission_noto'),
                    new lang_string('default_help', 'assignsubmission_noto'), 0));
-$settings->add(new admin_setting_configcheckbox('assignsubmission_noto/ethz',
-                   new lang_string('ethzinstallation', 'assignsubmission_noto'),
-                   new lang_string('ethzinstallation_help', 'assignsubmission_noto'), 0));
+$settings->add(new admin_setting_configcheckbox('assignsubmission_noto/kubernetes_mode',
+                   new lang_string('kubernetesmode', 'assignsubmission_noto'),
+                   new lang_string('kubernetesmode_help', 'assignsubmission_noto'), 0));
 $settings->add(new admin_setting_configtext('assignsubmission_noto/apiserver',
                    new lang_string('apiserver', 'assignsubmission_noto'),
                    new lang_string('apiserver_help', 'assignsubmission_noto'), 'https://test-noto.epfl.ch', PARAM_URL, 60));

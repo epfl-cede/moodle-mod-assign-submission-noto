@@ -83,7 +83,7 @@ $string['remotecopysuccess'] = 'A copy of the assignment has been copied to "{$a
 You can create another copy of the assignment or click “Cancel”.<br/><br/>
 {$a->backtoassignment}
 ';
-$string['remotecopysuccess_ethz'] = 'A copy of the assignment has been copied to "{$a->new_directory_created}".<br/>
+$string['remotecopysuccess_kubernetesmode'] = 'A copy of the assignment has been copied to "{$a->new_directory_created}".<br/>
 You can create another copy of the assignment or click “Cancel”.<br/><br/>
 {$a->backtoassignment}
 ';
@@ -92,7 +92,7 @@ A copy of the student submission has been copied to "{$a->new_directory_created}
 {$a->redirect_link}<br/><br/>
 {$a->backtoassignment}
 ';
-$string['remotecopysuccessteacher_ethz'] = '
+$string['remotecopysuccessteacher_kubernetesmode'] = '
 A copy of the student submission has been copied to "{$a->new_directory_created}".<br/><br/>
 {$a->backtoassignment}
 ';
@@ -133,8 +133,8 @@ $string['userprofilepassword'] = 'Password to access userprofile script';
 $string['userprofilepassword_help'] = 'ALPHANUM characters only';
 $string[''] = '';
 /* Kubernetes Installation settings */
-$string['ethzinstallation'] = 'Kubernetes Installation';
-$string['ethzinstallation_help'] = 'If checkbox is enabled, then only Kubernetes Installation settings will be showed.';
+$string['kubernetesmode'] = 'Kubernetes Installation';
+$string['kubernetesmode_help'] = 'If checkbox is enabled, then only Kubernetes Installation settings will be showed.';
 $string['apiurl'] = 'API URL';
 $string['apiurl_help'] = 'This API URL should include course id placeholder "[courseid]" (e.g. https://web2-xxx-[courseid].vvv.ethz.ch).
 It will be replaced automatically by course id.';
