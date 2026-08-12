@@ -55,7 +55,7 @@ $PAGE->set_heading(get_string('viewsubmission_pagetitle', 'assignsubmission_noto
 $PAGE->set_pagelayout('standard');
 require_login($cm->course);
 $config = get_config('assignsubmission_noto');
-if (!has_capability('mod/assign:grade', $context) && !$config->ethz) {
+if (!has_capability('mod/assign:grade', $context) && !$config->kubernetes_mode) {
     # this is a student, redirect them to NOTO
     $existing_submissions = $DB->get_record('assignsubmission_noto', array('assignment'=>$cm->instance, 'submission'=>$submission->id));
     $apinotebookpath = sprintf('%s/%s', trim($config->apiserver, '/'), trim($config->apinotebookpath, '/'));
@@ -125,7 +125,7 @@ if ($form->is_cancelled()) {
         throw new \moodle_exception('Empty directory returned after uzu() API call');
     }
     $new_directory_created = assignsubmission_noto\notoapi::normalize_localpath($new_directory_created);
-    if (!$config->ethz) {
+    if (!$config->kubernetes_mode) {
         $apinotebookpath = sprintf('%s/%s', trim($config->apiserver, '/'), trim($config->apinotebookpath, '/'));
     }
     $notoremotecopy = $DB->get_record('assignsubmission_noto_tcopy', array('studentid'=>$submission->userid, 'assignmentid'=>$submission->assignment));
@@ -145,7 +145,7 @@ if ($form->is_cancelled()) {
     $params['backtoassignment'] = html_writer::link(new moodle_url("/mod/assign/view.php", ['id' => $cm->id, 'action' => 'grading']),
         get_string('backtosubmissions','assignsubmission_noto'), ['class' => 'btn btn-primary']);
     $params['new_directory_created'] = $new_directory_created;
-    if (!$config->ethz) {
+    if (!$config->kubernetes_mode) {
         $params['redirect_link'] = html_writer::tag(
             'a',
             get_string('redirecttonoto', 'assignsubmission_noto'),
@@ -153,7 +153,7 @@ if ($form->is_cancelled()) {
         );
         \core\notification::success(get_string($stringidentifier, 'assignsubmission_noto', (object)$params));
     } else {
-        \core\notification::success(get_string($stringidentifier.'_ethz', 'assignsubmission_noto', (object)$params));
+        \core\notification::success(get_string($stringidentifier.'_kubernetesmode', 'assignsubmission_noto', (object)$params));
     }
     redirect($PAGE->url);
     exit;

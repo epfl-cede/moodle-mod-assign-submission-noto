@@ -122,7 +122,7 @@ if ($form->is_cancelled()) {
     }
     $new_directory_created = assignsubmission_noto\notoapi::normalize_localpath($new_directory_created);
     $config = get_config('assignsubmission_noto');
-    if (!$config->ethz) {
+    if (!$config->kubernetes_mode) {
         $apinotebookpath = sprintf('%s/%s', trim($config->apiserver, '/'), trim($config->apinotebookpath, '/'));
     }
     $notoremotecopy = $DB->get_record('assignsubmission_noto_copies', array('userid'=>$USER->id, 'assignmentid'=>$submission->assignment));
@@ -141,7 +141,7 @@ if ($form->is_cancelled()) {
     $params['new_directory_created'] = $new_directory_created;
     $params['backtoassignment'] = html_writer::link(new moodle_url("/mod/assign/view.php", ['id' => $cm->id]),
         get_string('backtoassignment','assignsubmission_noto'), ['class' => 'btn btn-primary']);
-    if (!$config->ethz) {
+    if (!$config->kubernetes_mode) {
         $params['redirect_link'] = html_writer::tag(
             'a',
             get_string('redirecttonoto', 'assignsubmission_noto'),
@@ -149,7 +149,7 @@ if ($form->is_cancelled()) {
         );
         \core\notification::success(get_string('remotecopysuccess', 'assignsubmission_noto', (object)$params));
     } else {
-        \core\notification::success(get_string('remotecopysuccess_ethz', 'assignsubmission_noto', (object)$params));
+        \core\notification::success(get_string('remotecopysuccess_kubernetesmode', 'assignsubmission_noto', (object)$params));
     }
 
     redirect($PAGE->url);
