@@ -24,7 +24,7 @@
 
 define(['jquery'], function($) {
 
-    function showETHZ() {
+    function show_kubernetes_mode() {
         $('#admin-apiserver:has(label[for*="noto"])').hide();
         $('#admin-apiwspath:has(label[for*="noto"])').hide();
         $('#admin-apinotebookpath:has(label[for*="noto"])').hide();
@@ -40,7 +40,7 @@ define(['jquery'], function($) {
         $('#admin-apiusernameparamprefix:has(label[for*="noto"])').show();
     }
 
-    function hideETHZ() {
+    function hide_kubernetes_mode() {
         $('#admin-apiserver:has(label[for*="noto"])').show();
         $('#admin-apiwspath:has(label[for*="noto"])').show();
         $('#admin-apinotebookpath:has(label[for*="noto"])').show();
@@ -56,20 +56,20 @@ define(['jquery'], function($) {
         $('#admin-apiusernameparamprefix:has(label[for*="noto"])').hide();
     }
 
-    function checkETHZ() {
-        if ($('input[name=s_assignsubmission_noto_ethz]').is(':checked')) {
-            showETHZ();
+    function check_kubernetes_mode() {
+        if ($('input[name=s_assignsubmission_noto_kubernetes_mode]').is(':checked')) {
+            show_kubernetes_mode();
         } else {
-            hideETHZ();
+            hide_kubernetes_mode();
         }
     }
 
     return {
         init: function() {
             $(document).ready(function($) {
-                checkETHZ();
-                $('input[name=s_assignsubmission_noto_ethz]').on('change', function() {
-                    checkETHZ();
+                check_kubernetes_mode();
+                $('input[name=s_assignsubmission_noto_kubernetes_mode]').on('change', function() {
+                    check_kubernetes_mode();
                 });
             });
         }
