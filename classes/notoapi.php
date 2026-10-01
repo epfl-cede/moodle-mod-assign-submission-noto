@@ -87,7 +87,7 @@ class notoapi {
      * @param stdClass $user
      * @return array response
      */
-    public function uzu (string $path, \stored_file $file, \stdClass $user = null) : \stdClass {
+    public function uzu (string $path, \stored_file $file, ?stdClass $user = null) : \stdClass {
         global $USER;
         if (!$user) {
             $user = $USER;
@@ -148,7 +148,7 @@ class notoapi {
      * @param stdClass $user
      * @return array response
      */
-    public function lof (string $path, \stdClass $user = null) : array {
+    public function lof (string $path, ?stdClass $user = null) : array {
         global $USER;
         if (!$user) {
             $user = $USER;
@@ -207,7 +207,7 @@ class notoapi {
      * @param stdClass $user
      * @return array response
      */
-    public function lod (string $path, \stdClass $user = null) : \stdClass {
+    public function lod (string $path, ?stdClass $user = null) : \stdClass {
         global $USER;
         if (!$user) {
             $user = $USER;
@@ -267,7 +267,7 @@ class notoapi {
      * @param stdClass $user
      * @return array response
      */
-    public function ls (string $path, \stdClass $user = null) : array {
+    public function ls (string $path, ?stdClass $user = null) : array {
         global $USER;
         if (!$user) {
             $user = $USER;
@@ -316,7 +316,7 @@ class notoapi {
      * @param stdClass $user
      * @return array response
      */
-    public function zfs (string $path, \stdClass $user = null) : \stdClass {
+    public function zfs (string $path, ?stdClass $user = null) : \stdClass {
         global $USER;
         if (!$user) {
             $user = $USER;
